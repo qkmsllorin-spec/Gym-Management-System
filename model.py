@@ -25,11 +25,6 @@ class DatabaseManager:
         return pymysql.connect(**self.config)
 
     def _execute_query(self, query, params=(), fetch=False):
-        """
-        Central query runner. Catches ALL exceptions (not just MySQLError)
-        and always closes the connection — no leaks.
-        Returns: list of tuples if fetch=True, lastrowid if fetch=False, None on any error.
-        """
         conn = None
         try:
             conn = self._get_conn()
@@ -42,7 +37,6 @@ class DatabaseManager:
                 conn.commit()
                 return cursor.lastrowid
         except Exception as e:
-            # Catches pymysql.MySQLError, OperationalError, TypeError, AttributeError — everything
             print(f"Database Error: {e}")
             if conn:
                 try:
@@ -51,24 +45,17 @@ class DatabaseManager:
                     pass
             return None
         finally:
-            # Always close — pymysql's context manager does NOT do this automatically
             if conn:
                 try:
                     conn.close()
                 except Exception:
                     pass
 
-    # ── PASSWORD HASHING ────────────────────────────────────────────────────
 
     def hash_password(self, password):
         return hashlib.sha256(password.encode()).hexdigest()
 
     def migrate_plain_passwords(self):
-        """
-        Finds users with un-hashed passwords (under 64 chars) and hashes them.
-        Safe to call every startup — skips already-hashed passwords.
-        Never raises — prints and returns silently on any error.
-        """
         try:
             users = self._execute_query("SELECT User_ID, Password FROM USER", fetch=True)
             if not users:
@@ -93,10 +80,6 @@ class DatabaseManager:
     # ── AUTH ────────────────────────────────────────────────────────────────
 
     def verify_login(self, username, password):
-        """
-        Returns (User_ID, Role_ID, Role_Name) on success, None on failure.
-        Never raises — all errors return None.
-        """
         try:
             hashed = self.hash_password(password)
             query  = """
@@ -113,7 +96,6 @@ class DatabaseManager:
             print(f"Login error: {e}")
             return None
 
-    # ── USER MANAGEMENT ─────────────────────────────────────────────────────
 
     def add_user(self, username, password, role_id):
         hashed = self.hash_password(password)
@@ -132,8 +114,6 @@ class DatabaseManager:
         except Exception:
             return None
 
-    # ── MEMBER MANAGEMENT ───────────────────────────────────────────────────
-
     def get_all_members(self):
         try:
             result = self._execute_query(
@@ -145,7 +125,6 @@ class DatabaseManager:
             return []
 
     def add_member(self, user_id, first_name, last_name, contact):
-        """Uses the AddMember stored procedure."""
         conn = None
         try:
             conn = self._get_conn()
@@ -181,7 +160,6 @@ class DatabaseManager:
         except Exception:
             return []
 
-    # ── GENERIC TABLE VIEWER ────────────────────────────────────────────────
 
     def get_table_columns(self, table_name):
         try:
@@ -205,7 +183,6 @@ class DatabaseManager:
         except Exception:
             return []
 
-    # ── OPERATIONS ──────────────────────────────────────────────────────────
 
     def add_subscription(self, type_id, member_id, start_date, end_date, status):
         self._execute_query("""
@@ -221,7 +198,6 @@ class DatabaseManager:
 
     def add_subscription_with_payment(self, type_id, member_id, start_date,
                                        end_date, status, amount, method):
-        """Atomic: subscription + payment together. Rolls back both if either fails."""
         conn = None
         try:
             conn = self._get_conn()
@@ -282,7 +258,6 @@ class DatabaseManager:
             return []
 
     def get_revenue_stats(self):
-        """Always returns (week_total, month_total) — never raises."""
         try:
             weekly_q  = "SELECT COALESCE(SUM(Amount), 0) FROM PAYMENT WHERE Payment_Date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
             monthly_q = "SELECT COALESCE(SUM(Amount), 0) FROM PAYMENT WHERE Payment_Date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)"
@@ -290,7 +265,6 @@ class DatabaseManager:
             w = self._execute_query(weekly_q,  fetch=True)
             m = self._execute_query(monthly_q, fetch=True)
 
-            # COALESCE in SQL handles NULL, but we double-check here too
             week_total  = float(w[0][0]) if w and w[0][0] is not None else 0.0
             month_total = float(m[0][0]) if m and m[0][0] is not None else 0.0
             return week_total, month_total

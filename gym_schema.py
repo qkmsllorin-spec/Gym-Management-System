@@ -25,7 +25,6 @@ cursor.execute("DROP TABLE IF EXISTS ACTIVITY_LOG")
 cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
 print("All tables dropped.")
 
-# ── RECREATE TABLES ──────────────────────────────────────────────────────────
 
 cursor.execute("""
     CREATE TABLE ROLE (

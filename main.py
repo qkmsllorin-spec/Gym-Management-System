@@ -34,7 +34,6 @@ class LoginWindow(QMainWindow):
         main_layout = QVBoxLayout()
         main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # ── LOGO ────────────────────────────────────────────────────────────
         self.logo = QLabel()
         self.logo.setFixedSize(180, 150)
         self.logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -53,7 +52,6 @@ class LoginWindow(QMainWindow):
             self.logo.setText("GYM DATABASE")
             self.logo.setStyleSheet("font-size: 24px; color: #DA0037; font-weight: bold;")
 
-        # ── INPUTS ──────────────────────────────────────────────────────────
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("Username")
 
@@ -61,11 +59,10 @@ class LoginWindow(QMainWindow):
         self.password_input.setPlaceholderText("Password")
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
 
-        # ── BUTTON ──────────────────────────────────────────────────────────
         self.login_btn = QPushButton("Login")
         self.login_btn.clicked.connect(self.handle_login)
 
-        # ── LAYOUT ──────────────────────────────────────────────────────────
+
         main_layout.addWidget(self.logo, alignment=Qt.AlignmentFlag.AlignCenter)
         main_layout.addSpacing(20)
         main_layout.addWidget(self.username_input)
@@ -87,7 +84,6 @@ class LoginWindow(QMainWindow):
                                 "Please enter both username and password.")
             return
 
-        # Step 1 — try the DB call
         try:
             user_data = self.db.verify_login(username, password)
         except Exception as e:
@@ -97,13 +93,11 @@ class LoginWindow(QMainWindow):
                                  f"Details: {str(e)}")
             return
 
-        # Step 2 — check credentials
         if not user_data:
             QMessageBox.warning(self, "Login Failed",
                                 "Incorrect username or password.")
             return
 
-        # Step 3 — try to open the dashboard
         user_id, role_id, role_name = user_data
         try:
             self.dashboard = DashboardWindow(self.db, user_id, role_name)
@@ -623,6 +617,9 @@ class DashboardWindow(QMainWindow):
 
             self.db.add_member(self.current_user_id, fname, lname, contact)
             self.refresh_member_table()
+            self.fname_input.clear()
+            self.lname_input.clear()
+            self.contact_input.clear()
             self.clear_fields(self.fname_input, self.lname_input, self.contact_input)
         except Exception as e:
             QMessageBox.warning(self, "Add Member Error", str(e))

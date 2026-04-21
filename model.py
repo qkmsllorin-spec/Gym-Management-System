@@ -259,14 +259,18 @@ class DatabaseManager:
 
     def get_revenue_stats(self):
         try:
-            weekly_q  = "SELECT COALESCE(SUM(Amount), 0) FROM PAYMENT WHERE Payment_Date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
-            monthly_q = "SELECT COALESCE(SUM(Amount), 0) FROM PAYMENT WHERE Payment_Date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)"
+            monthly_q = """
+                SELECT COALESCE(SUM(Amount), 0)
+                FROM PAYMENT
+                WHERE Payment_Date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            """
+            total_q = "SELECT COALESCE(SUM(Amount), 0) FROM PAYMENT"
 
-            w = self._execute_query(weekly_q,  fetch=True)
             m = self._execute_query(monthly_q, fetch=True)
+            t = self._execute_query(total_q, fetch=True)
 
-            week_total  = float(w[0][0]) if w and w[0][0] is not None else 0.0
             month_total = float(m[0][0]) if m and m[0][0] is not None else 0.0
-            return week_total, month_total
+            total_total = float(t[0][0]) if t and t[0][0] is not None else 0.0
+            return month_total, total_total
         except Exception:
             return 0.0, 0.0

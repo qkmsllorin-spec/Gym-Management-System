@@ -509,10 +509,10 @@ class DashboardWindow(QMainWindow):
             layout.addWidget(value)
             return card, value
 
-        weekly_card,  self.weekly_label  = make_stat_card("Weekly Revenue")
         monthly_card, self.monthly_label = make_stat_card("Monthly Revenue")
-        stats_row.addWidget(weekly_card)
+        total_card,   self.total_label   = make_stat_card("Total Revenue")
         stats_row.addWidget(monthly_card)
+        stats_row.addWidget(total_card)
 
         table_card, self.report_table = self.create_table_card(
             "Transaction History",
@@ -576,9 +576,9 @@ class DashboardWindow(QMainWindow):
 
     def refresh_reports(self):
         try:
-            week, month = self.db.get_revenue_stats()
-            self.weekly_label.setText(f"₱{week:,.2f}")
+            month, total = self.db.get_revenue_stats()
             self.monthly_label.setText(f"₱{month:,.2f}")
+            self.total_label.setText(f"₱{total:,.2f}")
             self.fill_table(self.report_table, self.db.get_payment_report())
         except Exception as e:
             print(f"Reports refresh error: {e}")
@@ -716,6 +716,10 @@ class DashboardWindow(QMainWindow):
             color: #EDEDED;
             font-family: Segoe UI;
             font-size: 14px;
+        }
+        QLabel {
+            background-color: transparent;
+            border: none;
         }
         QFrame#sidebar {
             background-color: #111111;
